@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/eliarizzetto/oc_pruner/report_schema.json",
+  "type": "array",
+  "uniqueItems": false,
+  "items": {
+    "type": "object",
+    "properties": {
+      "validation_level": {
+        "type": "string",
+        "enum": [
+          "csv_wellformedness",
+          "external_syntax",
+          "semantic"
+        ]
+      },
+      "error_type": {
+        "type": "string",
+        "enum": [
+          "error",
+          "warning"
+        ]
+      },
+      "error_label": {
+        "type": "string",
+        "enum": [
+          "br_id_existence",
+          "br_id_format",
+          "br_id_syntax",
+          "date_format",
+          "duplicate_br",
+          "duplicate_citation",
+          "duplicate_id",
+          "duplicate_ra",
+          "extra_space",
+          "missing_citations",
+          "missing_metadata",
+          "orphan_ra_id",
+          "orphan_venue_id",
+          "page_format",
+          "page_interval",
+          "people_item_format",
+          "publisher_format",
+          "ra_id_existence",
+          "ra_id_syntax",
+          "required_fields",
+          "required_value_cits",
+          "row_semantics",
+          "self-citation",
+          "type_format",
+          "uppercase_title",
+          "venue_format",
+          "volume_issue_format"
+        ]
+      },
+      "message": {
+        "type": "string"
+      },
+      "valid": {
+        "type": "boolean"
+      },
+      "position": {
+        "type": "object",
+        "properties": {
+          "located_in": {
+            "type": "string",
+            "enum": [
+              "row",
+              "field",
+              "item"
+            ]
+          },
+          "table": {
+            "type": "object",
+            "patternProperties": {
+              "^[0-9]+$": {
+                "type": "object",
+                "additionalProperties": {
+                  "propertyNames": {
+                    "enum": [
+                      "id",
+                      "title",
+                      "author",
+                      "pub_date",
+                      "venue",
+                      "volume",
+                      "issue",
+                      "page",
+                      "type",
+                      "publisher",
+                      "editor",
+                      "citing_id",
+                      "citing_publication_date",
+                      "cited_id",
+                      "cited_publication_date"
+                    ]
+                  },
+                  "type": "array",
+                  "items": {
+                    "type": ["integer", "null"]
+                  }
+                },
+                "minProperties": 1
+              }
+            },
+            "additionalProperties": false,
+            "minProperties": 1
+          }
+        },
+        "required": [
+          "located_in",
+          "table"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "validation_level",
+      "error_type",
+      "error_label",
+      "message",
+      "position"
+    ],
+    "if": {
+      "properties": {
+        "error_type": {
+          "const": "error"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "valid": {
+          "const": false
+        }
+      }
+    },
+    "additionalProperties": false
+  }
+}
