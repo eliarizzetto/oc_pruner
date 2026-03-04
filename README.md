@@ -2,12 +2,12 @@
 
 A tool for removing rows from an OpenCitations metadata or citations table based on the table's validation report.
 
-<!-- ## Features
+## Features
 
+- **Selective filtering**: Filter by error type (error/warning) and/or specific error labels
 - **Flexible configuration**: Configure via CLI arguments or configuration files
-- **Selective filtering**: Filter by error type and/or specific error labels
 - **Row-level deletion**: Removes entire rows containing issues
-- **Verbose output**: Detailed information about processing when needed -->
+- **Verbose output**: Detailed information about processing when needed
 
 
 ## Quick Start
@@ -129,7 +129,7 @@ See all valid error labels:
 oc_pruner --list-labels
 ```
 
-## Validation Report Format
+## Validation Report Model
 
 The validation report is a JSON file following the [validation report schema](schema.json). It consists of a list of issue objects, where each object represents a validation issue tied to specific locations in the CSV table.
 
@@ -154,37 +154,9 @@ The validation report is a JSON file following the [validation report schema](sc
 ```
 
 
-## Error Labels Reference
+### Error Labels Reference
 
-The following error labels are supported:
-
-- `br_id_existence` - Bibliographic resource ID existence
-- `br_id_format` - Bibliographic resource ID format
-- `br_id_syntax` - Bibliographic resource ID syntax
-- `date_format` - Date format validation
-- `duplicate_br` - Duplicate bibliographic resource
-- `duplicate_citation` - Duplicate citation
-- `duplicate_id` - Duplicate ID
-- `duplicate_ra` - Duplicate reference article
-- `extra_space` - Extra whitespace in fields
-- `missing_citations` - Missing citations
-- `missing_metadata` - Missing metadata
-- `orphan_ra_id` - Orphan reference article ID
-- `orphan_venue_id` - Orphan venue ID
-- `page_format` - Page number format
-- `page_interval` - Page interval validation
-- `people_item_format` - People item format
-- `publisher_format` - Publisher format
-- `ra_id_existence` - Reference article ID existence
-- `ra_id_syntax` - Reference article ID syntax
-- `required_fields` - Missing required fields
-- `required_value_cits` - Required values in citations
-- `row_semantics` - Row-level semantic validation
-- `self-citation` - Self-citation detection
-- `type_format` - Publication type format
-- `uppercase_title` - Uppercase title validation
-- `venue_format` - Venue format
-- `volume_issue_format` - Volume/issue format
+The supported issue labels are listed in the [validation report schema](schema.json) and the associated issues are explained [in this summary table](errors_map.csv).
 
 ## How It Works
 
