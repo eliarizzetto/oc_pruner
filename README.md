@@ -1,35 +1,14 @@
 # oc_pruner
 
-A tool for removing selected pieces of data from an OpenCitations metadata or citations table based on the table's validation report.
+A tool for removing rows from an OpenCitations metadata or citations table based on the table's validation report.
 
-## Features
+<!-- ## Features
 
-- **No external dependencies**: Uses only Python standard library
 - **Flexible configuration**: Configure via CLI arguments or configuration files
 - **Selective filtering**: Filter by error type and/or specific error labels
 - **Row-level deletion**: Removes entire rows containing issues
-- **Verbose output**: Detailed information about processing when needed
-- **Easy to use**: Simple CLI with helpful error messages
+- **Verbose output**: Detailed information about processing when needed -->
 
-## Installation
-
-### Requirements
-
-- Python 3.11 or higher
-
-### Install from source
-
-```bash
-git clone https://github.com/eliarizzetto/oc_pruner.git
-cd oc_pruner
-pip install -e .
-```
-
-### Install with pip
-
-```bash
-pip install oc-pruner
-```
 
 ## Quick Start
 
@@ -53,19 +32,19 @@ oc_pruner --csv input.csv --report report.json --output output.csv --verbose
 
 ### CLI Arguments
 
-| Argument | Required | Description |
-|----------|-----------|-------------|
-| `--csv PATH` | Yes | Path to the input CSV file |
-| `--report PATH` | Yes | Path to the validation report JSON file |
-| `--output PATH` | Yes | Path for the output CSV file |
-| `--config PATH` | No | Path to configuration file (YAML or JSON) |
-| `--error-type {all,error}` | No | Filter by error type (default: all) |
-| `--ignore-labels LABELS` | No | Comma-separated error labels to ignore |
-| `--verbose, -v` | No | Show detailed processing information |
-| `--init-config` | No | Generate a configuration file template |
-| `--list-labels` | No | List all valid error labels |
-| `--version` | No | Show version number |
-| `--help, -h` | No | Show help message |
+| Argument          | Abbreviation | Required | Description                               |
+|-------------------|--------------|----------|-------------------------------------------|
+| `--csv PATH`      | `-t`         | Yes      | Path to the input CSV file                |
+| `--report PATH`   | `-r`         | Yes      | Path to the validation report JSON file   |
+| `--output PATH`   | `-o`         | Yes      | Path for the output CSV file              |
+| `--config PATH`   | `-c`         | No       | Path to configuration file (YAML or JSON) |
+| `--error-type`    | `-e`         | No       | Filter by error type: all or error        |
+| `--ignore-labels` | `-i`         | No       | Comma-separated error labels to ignore    |
+| `--verbose`       | `-v`         | No       | Show detailed processing information      |
+| `--init-config`   | —            | No       | Generate a configuration file template    |
+| `--list-labels`   | —            | No       | List all valid error labels               |
+| `--help`          | `-h`         | No       | Show help message                         |
+
 
 ### Configuration File
 
@@ -89,7 +68,7 @@ Example `oc_pruner_config.yaml`:
 # Filter by error type: "all" (errors and warnings) or "error" (errors only)
 error_type_filter: "all"
 
-# List of error labels to ignore (data with these issues will be kept)
+# List of error labels to ignore (rows with these issues will be kept, unless interested by other issues)
 ignore_error_labels:
   - "extra_space"
   - "br_id_format"
@@ -152,7 +131,7 @@ oc_pruner --list-labels
 
 ## Validation Report Format
 
-The validation report is a JSON file following the [OpenCitations validation schema](schema.json). It consists of a list of issue objects, where each object represents a validation issue tied to specific locations in the CSV table.
+The validation report is a JSON file following the [validation report schema](schema.json). It consists of a list of issue objects, where each object represents a validation issue tied to specific locations in the CSV table.
 
 ### Issue Object Structure
 
@@ -174,16 +153,6 @@ The validation report is a JSON file following the [OpenCitations validation sch
 }
 ```
 
-### Fields
-
-- `validation_level`: One of "csv_wellformedness", "external_syntax", or "semantic"
-- `error_type`: "error" or "warning"
-- `error_label`: The specific type of error (see `--list-labels` for all options)
-- `message`: Human-readable description of the issue
-- `valid`: Boolean indicating if the data is valid (always `false` for errors)
-- `position`: Location of the affected data
-  - `located_in`: "row", "field", or "item"
-  - `table`: Object mapping row numbers (as strings) to affected fields
 
 ## Error Labels Reference
 
@@ -252,8 +221,3 @@ prune(
     verbose=True
 )
 ```
-
-
-## License
-
-This project is licensed under the LICENSE file.

@@ -211,3 +211,4 @@ __marimo__/
 
 .vscode/
 tmp/
+oc_pruner_config.yaml

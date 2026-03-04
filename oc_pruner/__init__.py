@@ -1,6 +1,6 @@
 """
-oc_pruner - A tool for removing selected pieces of data from an OpenCitations 
-metadata or citations table based on the table's validation report.
+oc_pruner - A tool for removing invalid rows from OpenCitations 
+metadata or citations tables based on the table's validation report.
 """
 
 __version__ = "0.1.0"

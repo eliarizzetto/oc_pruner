@@ -156,11 +156,14 @@ def prune(
     # Write output
     write_csv(filtered_data, output_path)
     
+    removed_count = len(rows_to_remove)
+    kept_count = len(data_rows) - removed_count
+
     if verbose:
-        removed_count = len(rows_to_remove)
-        kept_count = len(data_rows) - removed_count
         print(f"\nResults:")
         print(f"  Original rows: {len(csv_data)}")
         print(f"  Rows removed: {removed_count} ({', '.join(map(str, sorted(rows_to_remove)))})")
         print(f"  Rows kept: {kept_count}")
         print(f"  Output written to: {output_path}")
+    else:
+        print(f"Removed {removed_count} out of {len(data_rows)} original rows. Output written to: {output_path}")

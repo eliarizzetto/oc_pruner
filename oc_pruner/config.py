@@ -6,6 +6,7 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
+import yaml
 
 from oc_pruner.schema import ERROR_TYPES, ERROR_LABELS
 
@@ -89,7 +90,6 @@ def load_config_from_file(config_path: Path) -> PrunerConfig:
             data = json.load(f)
     elif suffix in [".yaml", ".yml"]:
         try:
-            import yaml
             with open(config_path, "r") as f:
                 data = yaml.safe_load(f)
         except ImportError:
@@ -108,7 +108,7 @@ def load_config_from_file(config_path: Path) -> PrunerConfig:
     
     return PrunerConfig(
         error_type_filter=data.get("error_type_filter", "all"),
-        ignore_error_labels=data.get("ignore_error_labels", [])
+        ignore_error_labels=data.get("ignore_error_labels") or []
     )
 
 
@@ -175,9 +175,33 @@ error_type_filter: "all"
 # List of error labels to ignore (data with these issues will be kept)
 # Uncomment and add labels as needed
 ignore_error_labels:
-  # - "extra_space"
+  # - "br_id_existence"
   # - "br_id_format"
+  # - "br_id_syntax"
+  # - "date_format"
+  # - "duplicate_br"
+  # - "duplicate_citation"
+  # - "duplicate_id"
+  # - "duplicate_ra"
+  # - "extra_space"
+  # - "missing_citations"
+  # - "missing_metadata"
+  # - "orphan_ra_id"
+  # - "orphan_venue_id"
+  # - "page_format"
+  # - "page_interval"
+  # - "people_item_format"
+  # - "publisher_format"
+  # - "ra_id_existence"
+  # - "ra_id_syntax"
+  # - "required_fields"
+  # - "required_value_cits"
+  # - "row_semantics"
+  # - "self-citation"
   # - "type_format"
+  # - "uppercase_title"
+  # - "venue_format"
+  # - "volume_issue_format"
 """
     
     with open(output_path, "w") as f:

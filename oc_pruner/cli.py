@@ -21,7 +21,7 @@ def create_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         prog="oc_pruner",
-        description="Remove selected pieces of data from an OpenCitations metadata or citations table based on the table's validation report.",
+        description="Remove invalid rows from an OpenCitations metadata or citations table based on the table's validation report.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -46,6 +46,7 @@ For more information, see: https://github.com/eliarizzetto/oc_pruner
     
     # Required arguments
     parser.add_argument(
+        "-t",
         "--csv",
         type=str,
         metavar="PATH",
@@ -53,6 +54,7 @@ For more information, see: https://github.com/eliarizzetto/oc_pruner
     )
     
     parser.add_argument(
+        "-r",
         "--report",
         type=str,
         metavar="PATH",
@@ -60,6 +62,7 @@ For more information, see: https://github.com/eliarizzetto/oc_pruner
     )
     
     parser.add_argument(
+        "-o",
         "--output",
         type=str,
         metavar="PATH",
@@ -68,6 +71,7 @@ For more information, see: https://github.com/eliarizzetto/oc_pruner
     
     # Optional arguments
     parser.add_argument(
+        "-c",
         "--config",
         type=str,
         metavar="PATH",
@@ -75,6 +79,7 @@ For more information, see: https://github.com/eliarizzetto/oc_pruner
     )
     
     parser.add_argument(
+        "-e",
         "--error-type",
         type=str,
         choices=["all", "error"],
@@ -83,6 +88,7 @@ For more information, see: https://github.com/eliarizzetto/oc_pruner
     )
     
     parser.add_argument(
+        "-i",
         "--ignore-labels",
         type=str,
         metavar="LABELS",
@@ -106,12 +112,6 @@ For more information, see: https://github.com/eliarizzetto/oc_pruner
         "--list-labels",
         action="store_true",
         help="List all valid error labels and exit"
-    )
-    
-    parser.add_argument(
-        "--version",
-        action="version",
-        version="%(prog)s 0.1.0"
     )
     
     return parser

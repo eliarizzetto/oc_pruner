@@ -67,8 +67,8 @@ class TestFindConfigFile(unittest.TestCase):
         """Clean up and restore original working directory."""
         import shutil
         import os
-        shutil.rmtree(self.temp_dir)
         os.chdir(self.original_cwd)
+        shutil.rmtree(self.temp_dir)
     
     def test_explicit_config_path(self):
         """Test finding explicitly specified config file."""
@@ -156,17 +156,6 @@ class TestLoadConfigFromFile(unittest.TestCase):
         
         self.assertIn("Unsupported config file format", str(context.exception))
     
-    def test_yaml_without_pyyaml(self):
-        """Test loading YAML when PyYAML is not installed."""
-        # Create a YAML file
-        config_path = Path(self.temp_dir) / "config.yaml"
-        config_path.write_text("error_type_filter: error")
-        
-        # This should raise ValueError about PyYAML
-        with self.assertRaises(ValueError) as context:
-            load_config_from_file(config_path)
-        
-        self.assertIn("PyYAML package", str(context.exception))
 
 
 class TestLoadConfig(unittest.TestCase):
@@ -181,8 +170,8 @@ class TestLoadConfig(unittest.TestCase):
         """Clean up and restore original working directory."""
         import shutil
         import os
-        shutil.rmtree(self.temp_dir)
         os.chdir(self.original_cwd)
+        shutil.rmtree(self.temp_dir)
     
     def test_load_defaults(self):
         """Test loading default configuration."""
