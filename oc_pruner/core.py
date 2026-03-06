@@ -5,6 +5,7 @@ Core functionality for pruning CSV files based on validation reports.
 from typing import List, Set
 from oc_pruner.config import PrunerConfig
 from oc_pruner.io_utils import read_csv, write_csv, read_validation_report
+import logging
 
 
 def should_ignore_issue(issue: dict, config: PrunerConfig) -> bool:
@@ -116,7 +117,7 @@ def prune(
     output_path: str,
     config: PrunerConfig,
     verbose: bool = False
-) -> None:
+) -> tuple[int, int]:
     """
     Prune a CSV file based on its validation report and user configuration.
     
@@ -130,6 +131,9 @@ def prune(
         output_path: Path for the output CSV file
         config: PrunerConfig instance with user preferences
         verbose: If True, print detailed processing information
+    
+    Returns:
+        Tuple of (original_row_count, kept_row_count)
     """
     # Read input files
     csv_data = read_csv(csv_path)
@@ -139,6 +143,7 @@ def prune(
         print(f"Loading CSV file: {csv_path} ({len(csv_data)} rows)")
         print(f"Loading validation report: {report_path} ({len(issues)} issues)")
         print(f"Configuration: Remove {config.error_type_filter} issues, ignore {len(config.ignore_error_labels)} labels")
+        logging.info(f"Starting pruning: CSV={csv_path}, Report={report_path}, Output={output_path}, Config=Remove {config.error_type_filter} issues, ignore {len(config.ignore_error_labels)} labels")
     
     # Determine which rows to remove
     rows_to_remove = determine_rows_to_remove(issues, config, verbose=verbose)
@@ -165,5 +170,9 @@ def prune(
         print(f"  Rows removed: {removed_count} ({', '.join(map(str, sorted(rows_to_remove)))})")
         print(f"  Rows kept: {kept_count}")
         print(f"  Output written to: {output_path}")
+        logging.info(f"Pruning completed: {removed_count} rows removed, {kept_count} rows kept. Output: {output_path}")
     else:
-        print(f"Removed {removed_count} out of {len(data_rows)} original rows. Output written to: {output_path}")
+        print(f"Removed {removed_count} out of {len(data_rows)} original rows ({kept_count} rows kept). Output written to: {output_path}")
+        logging.info(f"Pruning completed: {removed_count} rows removed, {kept_count} rows kept. Output: {output_path}")
+    
+    return (len(data_rows), kept_count)
