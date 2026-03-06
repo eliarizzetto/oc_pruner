@@ -1,6 +1,6 @@
 # oc_pruner
 
-A tool for removing rows from an OpenCitations metadata or citations table based on the table's validation report.
+A tool for removing rows from an OpenCitations metadata or citations table based on the table's validation report, with support for running complete validation and pruning pipelines.
 
 ## Features
 
@@ -8,11 +8,29 @@ A tool for removing rows from an OpenCitations metadata or citations table based
 - **Flexible configuration**: Configure via CLI arguments or configuration files
 - **Row-level deletion**: Removes entire rows containing issues
 - **Verbose output**: Detailed information about processing when needed
+- **Complete pipeline**: Run validation + pruning pipeline with multiple rounds for thorough cleaning
 
 
 ## Quick Start
 
-### Basic Usage
+### Run the Complete Pipeline
+
+Run a full validation and pruning pipeline for metadata and citations files:
+
+```bash
+oc_pruner pipeline --meta metadata.csv --cits citations.csv --out-dir output_dir
+```
+
+This will:
+1. Validate both files
+2. Remove invalid rows
+3. Re-validate the cleaned files
+4. Repeat the process to catch any newly exposed issues
+5. Perform a final validation check
+
+**Running the pipeline from the CLI does not allow for any configuration. For more flexibility, see the following sections illustrating how to prune a single CSV table (either metadata or citations) given its pre-existing validation report.**
+
+### Prune a Single Table Based On Its Existing Validation Report
 
 Remove all issues (errors and warnings) from a CSV file:
 
@@ -20,17 +38,31 @@ Remove all issues (errors and warnings) from a CSV file:
 oc_pruner --csv input.csv --report report.json --output output.csv
 ```
 
+Or use the explicit `prune` subcommand:
+
+```bash
+oc_pruner prune --csv input.csv --report report.json --output output.csv
+```
+
 ### With Verbose Output
 
 See detailed information about what's being processed:
 
 ```bash
-oc_pruner --csv input.csv --report report.json --output output.csv --verbose
+oc_pruner prune --csv input.csv --report report.json --output output.csv --verbose
 ```
 
 ## Configuration
 
-### CLI Arguments
+### CLI Arguments for `pipeline` mode (`pipeline` subcommand)
+
+| Argument          | Abbreviation | Required | Description                               |
+|-------------------|--------------|----------|-------------------------------------------|
+| `--meta PATH`      | `-m`         | Yes      | Path to the input metadata CSV file                |
+| `--cits PATH`   | `-c`         | Yes      | Path to the input citations CSV file   |
+| `--output PATH`   | `-o`         | Yes      | Path to the output directory where to write the output (pruned) file     |
+
+### CLI Arguments for single document mode (`prune` subcommand)
 
 | Argument          | Abbreviation | Required | Description                               |
 |-------------------|--------------|----------|-------------------------------------------|
@@ -84,7 +116,54 @@ Settings are applied in this order (later override earlier):
 
 ## Usage Examples
 
-### Remove Only Errors
+### Run the Complete Validation + Pruning Pipeline from CLI
+
+For thorough cleaning of OpenCitations metadata and citations files, use the `pipeline` command:
+
+```bash
+oc_pruner pipeline -m metadata.csv -c citations.csv -o output_dir
+```
+
+**Pipeline Arguments:**
+
+| Argument       | Abbreviation | Required | Description                          |
+|----------------|--------------|----------|--------------------------------------|
+| `--meta PATH`  | `-m`         | Yes      | Path to original metadata CSV        |
+| `--cits PATH`  | `-c`         | Yes      | Path to original citations CSV       |
+| `--out-dir`    | `-o`         | Yes      | Base output directory for results    |
+
+**What the pipeline does:**
+
+1. **First validation**: Validates both metadata and citations files
+2. **First pruning**: Removes rows with validation errors
+3. **Second validation**: Re-validates the cleaned files to catch new issues
+4. **Second pruning**: Removes any newly exposed errors
+5. **Final validation**: Performs a sanity check on the final cleaned files
+
+**Running `oc_pruner` __in pipeline mode from the CLI__ does not allow to configure which error types or labels to ignore.**
+
+The pipeline creates the following structure in the output directory:
+
+```
+output_dir/
+├── cleaned/
+│   ├── metadata.csv       # Final cleaned metadata
+│   └── citations.csv      # Final cleaned citations
+└── validation_reports/
+    ├── first_round/
+    │   ├── metadata/
+    │   └── citations/
+    ├── second_round/
+    │   ├── metadata/
+    │   └── citations/
+    └── final_round/
+        ├── metadata/
+        └── citations/
+```
+
+All operations are logged to `logs/pipeline_YYYYMMDD_HHMMSS.log`.
+
+### Remove Only Errors (Single Document)
 
 Ignore warnings and only remove rows with errors:
 
@@ -92,7 +171,7 @@ Ignore warnings and only remove rows with errors:
 oc_pruner --csv data.csv --report report.json --output clean.csv --error-type error
 ```
 
-### Ignore Specific Error Labels
+### Ignore Specific Error Labels (Single Document)
 
 Keep rows that have specific issues:
 
@@ -101,7 +180,7 @@ oc_pruner --csv data.csv --report report.json --output clean.csv \
   --ignore-labels extra_space,br_id_format
 ```
 
-### Use Configuration File
+### Use Configuration File (Single Document)
 
 Create a config file and use it:
 
@@ -111,7 +190,7 @@ oc_pruner --init-config
 oc_pruner --csv data.csv --report report.json --output clean.csv
 ```
 
-### Combine Filters
+### Combine Filters (Single Document)
 
 Remove only errors except for specific labels:
 

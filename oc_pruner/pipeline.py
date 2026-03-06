@@ -163,49 +163,6 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
         print("Pruning pipeline completed with validation errors. Check logs for details.")
 
 # ---------------------------------------------------------------------
-# CLI
+# Note: The CLI entry point is now handled by oc_pruner/cli.py
+# Run with: oc_pruner pipeline -m <meta.csv> -c <citations.csv> -o <output_dir>
 # ---------------------------------------------------------------------
-
-def parse_args():
-
-    parser = argparse.ArgumentParser(
-        description="Run OpenCitations validation + pruning pipeline"
-    )
-
-    parser.add_argument(
-        "-m",
-        "--meta",
-        required=True,
-        help="Path to original metadata CSV"
-    )
-
-    parser.add_argument(
-        "-c",
-        "--cits",
-        required=True,
-        help="Path to original citations CSV"
-    )
-
-    parser.add_argument(
-        "-o",
-        "--out-dir",
-        required=True,
-        help="Base output directory"
-    )
-
-    return parser.parse_args()
-
-
-def main():
-
-    args = parse_args()
-
-    run_pruning_pipeline(
-        original_fp_meta=args.meta,
-        original_fp_cits=args.cits,
-        base_out_dir=args.out_dir
-    )
-
-
-if __name__ == "__main__":
-    main()
