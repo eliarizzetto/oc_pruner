@@ -104,21 +104,21 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
     # First pruning
     # --------------------------------------------------
 
-    first_meta_clean = cleaned_dir / Path(meta_csv).name
-    first_cits_clean = cleaned_dir / Path(cits_csv).name
+    meta_clean = cleaned_dir / Path(meta_csv).name
+    cits_clean = cleaned_dir / Path(cits_csv).name
 
     logging.info("Starting first pruning round")
 
-    run_pruning(meta_csv, meta_report, first_meta_clean)
-    run_pruning(cits_csv, cits_report, first_cits_clean)
+    run_pruning(meta_csv, meta_report, meta_clean)
+    run_pruning(cits_csv, cits_report, cits_clean)
 
     # --------------------------------------------------
     # Second validation
     # --------------------------------------------------
 
     meta_csv, cits_csv, meta_report, cits_report = run_validation(
-        first_meta_clean,
-        first_cits_clean,
+        meta_clean,
+        cits_clean,
         base_out_dir,
         "second_round"
     )
@@ -129,8 +129,8 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
 
     logging.info("Starting second pruning round (removing potentially new errors)")
 
-    run_pruning(first_meta_clean, meta_report, first_meta_clean, verbose=True)
-    run_pruning(first_cits_clean, cits_report, first_cits_clean, verbose=True)
+    run_pruning(meta_clean, meta_report, meta_clean, verbose=True)
+    run_pruning(cits_clean, cits_report, cits_clean, verbose=True)
 
     # --------------------------------------------------
     # Final validation
@@ -138,29 +138,38 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
 
     logging.info("Starting final validation sanity check")
 
-    final_cv = ClosureValidator(
-        meta_csv_doc=first_meta_clean,
-        meta_output_dir=base_out_dir / "validation_reports" / "final_round" / "metadata",
-        cits_csv_doc=first_cits_clean,
-        cits_output_dir=base_out_dir / "validation_reports" / "final_round" / "citations",
-        meta_kwargs={'verify_id_existence': False},
-        cits_kwargs={'verify_id_existence': False}
-    )
+    try:
 
-    meta_final_report, cits_final_report = final_cv.validate()
+        final_cv = ClosureValidator(
+            meta_csv_doc=meta_clean,
+            meta_output_dir=base_out_dir / "validation_reports" / "final_round" / "metadata",
+            cits_csv_doc=cits_clean,
+            cits_output_dir=base_out_dir / "validation_reports" / "final_round" / "citations",
+            meta_kwargs={'verify_id_existence': False},
+            cits_kwargs={'verify_id_existence': False}
+        )
 
-    if not meta_final_report["errors"] and not cits_final_report["errors"]:
-        logging.info("Final validation passed with no errors")
-        logging.info("Final cleaned metadata CSV: %s", first_meta_clean)
-        logging.info("Final cleaned citations CSV: %s", first_cits_clean)
-        print("Pruning pipeline completed successfully. Final cleaned CSVs are located at:")
-        print(f"  Metadata: {first_meta_clean}")
-        print(f"  Citations: {first_cits_clean}")
-    else:
-        logging.warning("Final validation found errors:")
-        logging.warning("Metadata: %s issues", len(meta_final_report["errors"]))
-        logging.warning("Citations: %s issues", len(cits_final_report["errors"]))
-        print("Pruning pipeline completed with validation errors. Check logs for details.")
+        meta_final_report, cits_final_report = final_cv.validate()
+
+        if not meta_final_report and not cits_final_report:
+            logging.info("Final validation passed with no errors")
+            logging.info("Final cleaned metadata CSV: %s", meta_clean)
+            logging.info("Final cleaned citations CSV: %s", cits_clean)
+            print("Pruning pipeline completed successfully. Final cleaned CSVs are located at:")
+            print(f"  Metadata: {meta_clean}")
+            print(f"  Citations: {cits_clean}")
+        else:
+            logging.warning("Final validation found errors:")
+            logging.warning("Metadata: %s issues", len(meta_final_report))
+            logging.warning("Citations: %s issues", len(cits_final_report))
+            print("Pruning pipeline completed with validation errors. Check logs for details.")
+    
+    except Exception as e:
+        logging.error("Error during final validation: %s", str(e))
+        print("An error occurred during final validation.")
+        import traceback
+        traceback.print_exc()
+
 
 # ---------------------------------------------------------------------
 # Note: The CLI entry point is now handled by oc_pruner/cli.py
