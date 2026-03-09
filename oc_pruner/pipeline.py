@@ -107,7 +107,7 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
     meta_clean = cleaned_dir / Path(meta_csv).name
     cits_clean = cleaned_dir / Path(cits_csv).name
 
-    logging.info("Starting first pruning round")
+    logging.info("Starting 1st pruning round")
 
     run_pruning(meta_csv, meta_report, meta_clean)
     run_pruning(cits_csv, cits_report, cits_clean)
@@ -127,8 +127,28 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
     # Second pruning (overwrite)
     # --------------------------------------------------
 
-    logging.info("Starting second pruning round (removing potentially new errors)")
+    logging.info("Starting 2nd pruning round (removing potentially new errors)")
 
+    run_pruning(meta_clean, meta_report, meta_clean, verbose=True)
+    run_pruning(cits_clean, cits_report, cits_clean, verbose=True)
+
+    # -------------------------------------------------- 
+    # Third validation
+    # --------------------------------------------------
+
+    meta_csv, cits_csv, meta_report, cits_report = run_validation(
+        meta_clean,
+        cits_clean,
+        base_out_dir,
+        "third_round"
+    )
+
+    # --------------------------------------------------
+    # Third pruning (overwrite)
+    # --------------------------------------------------
+
+    # 3rd pruning is necessary if the previous step has removed citation rows (linked each to 2 metadata rows)
+    logging.info("Starting 3rd pruning round (final cleanup)")  
     run_pruning(meta_clean, meta_report, meta_clean, verbose=True)
     run_pruning(cits_clean, cits_report, cits_clean, verbose=True)
 
