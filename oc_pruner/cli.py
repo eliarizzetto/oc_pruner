@@ -11,6 +11,10 @@ from oc_pruner.config import load_config, generate_config_template
 from oc_pruner.core import prune
 from oc_pruner.schema import ERROR_LABELS
 from oc_pruner.pipeline import run_pruning_pipeline
+from csv import field_size_limit
+
+
+field_size_limit(sys.maxsize)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -270,6 +274,7 @@ def main() -> int:
     """
     parser = create_parser()
     args = parser.parse_args()
+    field_size_limit(sys.maxsize)
     
     # Handle special operations (these work regardless of subcommand)
     if args.list_labels:
