@@ -70,11 +70,23 @@ def read_validation_report(report_path: str) -> List[dict]:
         json.JSONDecodeError: If the file is not valid JSON
     """
     path = Path(report_path)
+    issues = []
     if not path.exists():
         raise FileNotFoundError(f"Validation report not found: {report_path}")
     
     with open(path, "r", encoding="utf-8") as f:
-        issues = json.load(f)
+        try:
+            for l in f:
+                issues.append(json.loads(l))  # the report is a JSON-Lines file
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON in validation report: {e}")
+            print(f"Offending line: {l}")
+            print("Trying to read the entire file as a JSON array...")
+            f.seek(0)
+            try:
+                issues = json.load(f)  # the report is in the legacy JSON format
+            except json.JSONDecodeError as e2:
+                raise ValueError(f"Failed to parse validation report as JSON array: {e2}")
     
     if not isinstance(issues, list):
         raise ValueError(
