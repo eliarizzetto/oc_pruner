@@ -6,6 +6,7 @@ import csv
 import json
 from pathlib import Path
 from typing import List
+import sys
 
 
 def read_csv(csv_path: str) -> List[List[str]]:
@@ -28,7 +29,7 @@ def read_csv(csv_path: str) -> List[List[str]]:
     
     rows = []
     with open(path, "r", newline="", encoding="utf-8") as f:
-        csv.field_size_limit = 1000000
+        csv.field_size_limit(sys.maxsize)
         reader = csv.reader(f)
         for row in reader:
             rows.append(row)
