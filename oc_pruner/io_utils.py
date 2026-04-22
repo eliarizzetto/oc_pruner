@@ -57,40 +57,45 @@ def write_csv(data: List[List[str]], output_path: str) -> None:
 
 def read_validation_report(report_path: str) -> List[dict]:
     """
-    Read a validation report JSON file.
-    
+    Read a validation report file in JSON or JSON-Lines format.
+    The format is determined automatically from the file extension:
+      - .jsonl -> JSON-Lines (one JSON object per line)
+      - .json  -> JSON array
+
     Args:
-        report_path: Path to the validation report JSON file
-        
+        report_path: Path to the validation report file
+
     Returns:
         List of issue objects
-        
+
     Raises:
         FileNotFoundError: If the report file doesn't exist
         json.JSONDecodeError: If the file is not valid JSON
     """
     path = Path(report_path)
-    issues = []
     if not path.exists():
         raise FileNotFoundError(f"Validation report not found: {report_path}")
-    
-    with open(path, "r", encoding="utf-8") as f:
-        try:
-            for l in f:
-                issues.append(json.loads(l))  # the report is a JSON-Lines file
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON in validation report: {e}")
-            print(f"Offending line: {l}")
-            print("Trying to read the entire file as a JSON array...")
-            f.seek(0)
-            try:
-                issues = json.load(f)  # the report is in the legacy JSON format
-            except json.JSONDecodeError as e2:
-                raise ValueError(f"Failed to parse validation report as JSON array: {e2}")
-    
+
+    ext = path.suffix.lower()
+
+    if ext == ".jsonl":
+        # JSON-Lines format (oc_validator >= 0.4)
+        issues = []
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                issues.append(json.loads(line))
+    elif ext == ".json":
+        # JSON array format (oc_validator < 0.4)
+        with open(path, "r", encoding="utf-8") as f:
+            issues = json.load(f)
+    else:
+        raise ValueError(
+            f"Unsupported validation report extension '{ext}'. Expected .json or .jsonl"
+        )
+
     if not isinstance(issues, list):
         raise ValueError(
             f"Validation report must be a list of issues, got {type(issues).__name__}"
         )
-    
+
     return issues
