@@ -31,14 +31,14 @@ logging.basicConfig(
 
 def run_validation(meta_csv, cits_csv, out_dir, round_name):
     """Run ClosureValidator and return report paths."""
-    
+
     logging.info("Starting validation round: %s", round_name)
 
     cv = ClosureValidator(
-        meta_csv_doc=meta_csv,
-        meta_output_dir=out_dir / "validation_reports" / round_name / "metadata",
-        cits_csv_doc=cits_csv,
-        cits_output_dir=out_dir / "validation_reports" / round_name / "citations",
+        meta_in=meta_csv,
+        meta_out_dir=str(out_dir / "validation_reports" / round_name / "metadata"),
+        cits_in=cits_csv,
+        cits_out_dir=str(out_dir / "validation_reports" / round_name / "citations"),
         meta_kwargs={'verify_id_existence': False},
         cits_kwargs={'verify_id_existence': False}
     )
@@ -161,17 +161,25 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
     try:
 
         final_cv = ClosureValidator(
-            meta_csv_doc=meta_clean,
-            meta_output_dir=base_out_dir / "validation_reports" / "final_round" / "metadata",
-            cits_csv_doc=cits_clean,
-            cits_output_dir=base_out_dir / "validation_reports" / "final_round" / "citations",
+            meta_in=meta_clean,
+            meta_out_dir=str(base_out_dir / "validation_reports" / "final_round" / "metadata"),
+            cits_in=cits_clean,
+            cits_out_dir=str(base_out_dir / "validation_reports" / "final_round" / "citations"),
             meta_kwargs={'verify_id_existence': False},
             cits_kwargs={'verify_id_existence': False}
         )
 
-        meta_final_report, cits_final_report = final_cv.validate()
+        meta_result, cits_result = final_cv.validate()
 
-        if not meta_final_report and not cits_final_report:
+        # Support both old API (returns lists) and new API (returns bools)
+        if isinstance(meta_result, bool):
+            meta_is_valid = meta_result
+            cits_is_valid = cits_result
+        else:
+            meta_is_valid = not meta_result  # empty list -> True
+            cits_is_valid = not cits_result
+
+        if meta_is_valid and cits_is_valid:
             logging.info("Final validation passed with no errors")
             logging.info("Final cleaned metadata CSV: %s", meta_clean)
             logging.info("Final cleaned citations CSV: %s", cits_clean)
@@ -180,8 +188,12 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
             print(f"  Citations: {cits_clean}")
         else:
             logging.warning("Final validation found errors:")
-            logging.warning("Metadata: %s issues", len(meta_final_report))
-            logging.warning("Citations: %s issues", len(cits_final_report))
+            if isinstance(meta_result, bool):
+                logging.warning("Metadata: not valid")
+                logging.warning("Citations: not valid")
+            else:
+                logging.warning("Metadata: %s issues", len(meta_result))
+                logging.warning("Citations: %s issues", len(cits_result))
             print("Pruning pipeline completed with validation errors. Check logs for details.")
     
     except Exception as e:

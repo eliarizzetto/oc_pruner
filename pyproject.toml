@@ -6,10 +6,11 @@ authors = [
     {name = "Elia Rizzetto",email = "elia.rizzetto@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.11,<3.14"
 dependencies = [
     "pyyaml (>=6.0.3,<7.0.0)",
-    "oc-validator (>=0.3.13,<0.4.0)"
+    "oc-validator (>=1.0.0,<2.0.0)",
+    "oc-ds-converter (>=2.0.0,<3.0.0)"
 ]
 
 

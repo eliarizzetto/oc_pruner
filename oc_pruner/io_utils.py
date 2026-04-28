@@ -66,14 +66,18 @@ def write_csv(data: List[List[str]], output_path: str) -> None:
 
 def read_validation_report(report_path: str) -> List[dict]:
     """
-    Read a validation report JSON file.
-    
+    Read a validation report file (JSON array or JSON-Lines).
+
+    Supports both monolithic JSON (a single JSON array of issue objects)
+    and JSON-Lines format (one JSON object per line), as produced by
+    different versions of oc_validator.
+
     Args:
-        report_path: Path to the validation report JSON file
-        
+        report_path: Path to the validation report file
+
     Returns:
         List of issue objects
-        
+
     Raises:
         FileNotFoundError: If the report file doesn't exist
         json.JSONDecodeError: If the file is not valid JSON
@@ -81,13 +85,30 @@ def read_validation_report(report_path: str) -> List[dict]:
     path = Path(report_path)
     if not path.exists():
         raise FileNotFoundError(f"Validation report not found: {report_path}")
-    
-    with open(path, "r", encoding="utf-8") as f:
-        issues = json.load(f)
-    
-    if not isinstance(issues, list):
+
+    raw = path.read_text(encoding="utf-8").strip()
+
+    if not raw:
+        return []
+
+    # Try monolithic JSON array first (pre-1.0.0 oc_validator)
+    try:
+        issues = json.loads(raw)
+        if isinstance(issues, list):
+            return issues
+    except json.JSONDecodeError:
+        pass
+
+    # Fall back to JSON-Lines (oc_validator >= 1.0.0)
+    issues = []
+    for line in raw.splitlines():
+        line = line.strip()
+        if line:
+            issues.append(json.loads(line))
+
+    if not issues:
         raise ValueError(
-            f"Validation report must be a list of issues, got {type(issues).__name__}"
+            f"Validation report contains no parseable issues: {report_path}"
         )
-    
+
     return issues
