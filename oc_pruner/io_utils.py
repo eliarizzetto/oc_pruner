@@ -29,7 +29,15 @@ def read_csv(csv_path: str) -> List[List[str]]:
     
     rows = []
     with open(path, "r", newline="", encoding="utf-8") as f:
-        csv.field_size_limit(sys.maxsize)
+        maxInt = sys.maxsize
+        while True:
+            # decrease the maxInt value by factor 10 
+            # as long as the OverflowError occurs.
+            try:
+                csv.field_size_limit(maxInt)
+                break
+            except OverflowError:
+                maxInt = int(maxInt/10)
         reader = csv.reader(f)
         for row in reader:
             rows.append(row)

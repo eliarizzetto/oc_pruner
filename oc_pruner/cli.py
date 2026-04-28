@@ -12,9 +12,7 @@ from oc_pruner.core import prune
 from oc_pruner.schema import ERROR_LABELS
 from oc_pruner.pipeline import run_pruning_pipeline
 from csv import field_size_limit
-
-
-field_size_limit(sys.maxsize)
+import csv
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -274,7 +272,16 @@ def main() -> int:
     """
     parser = create_parser()
     args = parser.parse_args()
-    field_size_limit(sys.maxsize)
+    # field_size_limit(sys.maxsize)
+    maxInt = sys.maxsize
+    while True:
+        # decrease the maxInt value by factor 10 
+        # as long as the OverflowError occurs.
+        try:
+            csv.field_size_limit(maxInt)
+            break
+        except OverflowError:
+            maxInt = int(maxInt/10)
     
     # Handle special operations (these work regardless of subcommand)
     if args.list_labels:
