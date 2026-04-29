@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import List
 
-from oc_pruner.config import load_config, generate_config_template
+from oc_pruner.config import load_config, load_pipeline_config, generate_config_template
 from oc_pruner.core import prune
 from oc_pruner.schema import ERROR_LABELS
 from oc_pruner.pipeline import run_pruning_pipeline
@@ -31,6 +31,12 @@ Examples:
   # Run the full validation + pruning pipeline
   oc_pruner pipeline -m meta.csv -c citations.csv -o output_dir
 
+  # Run the pipeline with custom pruning and validation options
+  oc_pruner pipeline -m meta.csv -c citations.csv -o output_dir --ignore-labels extra_space --verify-id-existence
+
+  # Run the pipeline with a config file
+  oc_pruner pipeline -m meta.csv -c citations.csv -o output_dir --config pipeline_config.yaml
+
   # Prune a single CSV file
   oc_pruner prune --csv input.csv --report report.json --output output.csv
 
@@ -38,7 +44,7 @@ Examples:
   oc_pruner --csv input.csv --report report.json --output output.csv
 
   # Generate a configuration template
-  oc_pruner prune --init-config
+  oc_pruner --init-config
 
 For more information, see: https://github.com/eliarizzetto/oc_pruner
         """
@@ -161,7 +167,52 @@ For more information, see: https://github.com/eliarizzetto/oc_pruner
         metavar="PATH",
         help="Base output directory"
     )
-    
+
+    pipeline_parser.add_argument(
+        "--config",
+        type=str,
+        metavar="PATH",
+        help="Path to a YAML/JSON configuration file for pipeline options (pruning, validation, etc.)"
+    )
+
+    pipeline_parser.add_argument(
+        "-e",
+        "--error-type",
+        type=str,
+        choices=["all", "error"],
+        default=None,
+        help="Filter issues by error type: 'all' (errors and warnings) or 'error' (errors only). Default: from config file or 'all'"
+    )
+
+    pipeline_parser.add_argument(
+        "-i",
+        "--ignore-labels",
+        type=str,
+        metavar="LABELS",
+        help="Comma-separated list of error labels to ignore. Example: extra_space,br_id_format,type_format"
+    )
+
+    pipeline_parser.add_argument(
+        "--verify-id-existence",
+        action="store_true",
+        default=None,
+        help="Verify that bibliographic IDs exist via API lookup during validation"
+    )
+
+    pipeline_parser.add_argument(
+        "--use-meta-endpoint",
+        action="store_true",
+        default=None,
+        help="Use the OC Meta endpoint for ID existence checks"
+    )
+
+    pipeline_parser.add_argument(
+        "--strict-sequentiality",
+        action="store_true",
+        default=None,
+        help="Skip closure check when individual validations report errors"
+    )
+
     # -----------------------------------------------------------------
     # Backward compatibility: Add top-level arguments that map to prune
     # -----------------------------------------------------------------
@@ -301,11 +352,33 @@ def main() -> int:
     
     # Handle pipeline command
     if args.command == "pipeline":
+        # Parse ignore labels
+        pipeline_ignore_labels = None
+        if args.ignore_labels:
+            pipeline_ignore_labels = parse_ignore_labels(args.ignore_labels)
+
+        try:
+            pipeline_config = load_pipeline_config(
+                config_path=args.config,
+                error_type_filter=args.error_type,
+                ignore_labels=pipeline_ignore_labels,
+                verify_id_existence=args.verify_id_existence,
+                use_meta_endpoint=args.use_meta_endpoint,
+                strict_sequentiality=args.strict_sequentiality,
+            )
+        except ValueError as e:
+            print(f"Configuration error: {e}", file=sys.stderr)
+            return 1
+        except Exception as e:
+            print(f"Error loading configuration: {e}", file=sys.stderr)
+            return 1
+
         try:
             run_pruning_pipeline(
                 original_fp_meta=args.meta,
                 original_fp_cits=args.cits,
-                base_out_dir=args.out_dir
+                base_out_dir=args.out_dir,
+                pipeline_config=pipeline_config
             )
             return 0
         except FileNotFoundError as e:

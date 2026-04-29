@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from oc_pruner.pipeline import run_validation
+from oc_pruner.config import PipelineConfig
 
 
 def _make_sample_csv(path, table_type="meta"):
@@ -46,15 +47,16 @@ class TestRunValidationCallsClosureValidator(unittest.TestCase):
         mock_instance.cits_validator.output_fp_json = "/out/report_cits.jsonl"
         MockCV.return_value = mock_instance
 
-        run_validation(str(self.meta_csv), str(self.cits_csv), Path(self.temp_dir), "round1")
+        config = PipelineConfig()
+        run_validation(str(self.meta_csv), str(self.cits_csv), Path(self.temp_dir), "round1", config)
 
         call_kwargs = MockCV.call_args[1]
         self.assertIn("meta_in", call_kwargs)
         self.assertIn("cits_in", call_kwargs)
         self.assertIn("meta_out_dir", call_kwargs)
         self.assertIn("cits_out_dir", call_kwargs)
-        self.assertEqual(call_kwargs["meta_kwargs"], {"verify_id_existence": False})
-        self.assertEqual(call_kwargs["cits_kwargs"], {"verify_id_existence": False})
+        self.assertEqual(call_kwargs["meta_kwargs"]["verify_id_existence"], False)
+        self.assertEqual(call_kwargs["cits_kwargs"]["verify_id_existence"], False)
 
     @patch("oc_pruner.pipeline.ClosureValidator")
     def test_output_dirs_include_round_name(self, MockCV):
@@ -66,7 +68,8 @@ class TestRunValidationCallsClosureValidator(unittest.TestCase):
         mock_instance.cits_validator.output_fp_json = "/out/report_cits.jsonl"
         MockCV.return_value = mock_instance
 
-        run_validation(str(self.meta_csv), str(self.cits_csv), Path(self.temp_dir), "first_round")
+        config = PipelineConfig()
+        run_validation(str(self.meta_csv), str(self.cits_csv), Path(self.temp_dir), "first_round", config)
 
         call_kwargs = MockCV.call_args[1]
         self.assertIn("first_round", call_kwargs["meta_out_dir"])
@@ -98,7 +101,8 @@ class TestRunValidationNewAPI(unittest.TestCase):
         mock_instance.cits_validator.output_fp_json = "/out/report_cits.jsonl"
         MockCV.return_value = mock_instance
 
-        result = run_validation(str(self.meta_csv), str(self.cits_csv), Path(self.temp_dir), "round1")
+        config = PipelineConfig()
+        result = run_validation(str(self.meta_csv), str(self.cits_csv), Path(self.temp_dir), "round1", config)
 
         self.assertEqual(len(result), 4)
         self.assertEqual(result[2], "/out/report_meta.jsonl")

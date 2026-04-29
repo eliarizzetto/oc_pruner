@@ -5,7 +5,7 @@ import os
 
 from oc_validator.main import ClosureValidator
 from oc_pruner import prune
-from oc_pruner.config import PrunerConfig
+from oc_pruner.config import PipelineConfig
 from datetime import datetime
 
 
@@ -29,7 +29,7 @@ logging.basicConfig(
 # Helpers
 # ---------------------------------------------------------------------
 
-def run_validation(meta_csv, cits_csv, out_dir, round_name):
+def run_validation(meta_csv, cits_csv, out_dir, round_name, pipeline_config):
     """Run ClosureValidator and return report paths."""
 
     logging.info("Starting validation round: %s", round_name)
@@ -39,8 +39,12 @@ def run_validation(meta_csv, cits_csv, out_dir, round_name):
         meta_out_dir=str(out_dir / "validation_reports" / round_name / "metadata"),
         cits_in=cits_csv,
         cits_out_dir=str(out_dir / "validation_reports" / round_name / "citations"),
-        meta_kwargs={'verify_id_existence': False},
-        cits_kwargs={'verify_id_existence': False}
+        strict_sequentiality=pipeline_config.strict_sequentiality,
+        use_lmdb=pipeline_config.use_lmdb,
+        map_size=pipeline_config.map_size,
+        cache_dir=pipeline_config.cache_dir,
+        meta_kwargs=pipeline_config.meta_kwargs,
+        cits_kwargs=pipeline_config.cits_kwargs,
     )
 
     cv.validate()
@@ -56,21 +60,16 @@ def run_validation(meta_csv, cits_csv, out_dir, round_name):
     return meta_csv_path, cits_csv_path, meta_report, cits_report
 
 
-def run_pruning(csv_path, report_path, output_path, verbose=False):
+def run_pruning(csv_path, report_path, output_path, pipeline_config, verbose=False):
     """Run pruning step."""
-    
-    logging.info("Pruning CSV: %s", csv_path)
 
-    config = PrunerConfig(
-        error_type_filter="all",
-        ignore_error_labels=[]
-    )
+    logging.info("Pruning CSV: %s", csv_path)
 
     prune(
         csv_path=csv_path,
         report_path=report_path,
         output_path=output_path,
-        config=config,
+        config=pipeline_config.pruner_config,
         verbose=verbose
     )
 
@@ -81,7 +80,10 @@ def run_pruning(csv_path, report_path, output_path, verbose=False):
 # Pipeline
 # ---------------------------------------------------------------------
 
-def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
+def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir, pipeline_config=None):
+
+    if pipeline_config is None:
+        pipeline_config = PipelineConfig()
 
     base_out_dir = Path(base_out_dir)
     cleaned_dir = base_out_dir / "cleaned"
@@ -97,7 +99,8 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
         original_fp_meta,
         original_fp_cits,
         base_out_dir,
-        "first_round"
+        "first_round",
+        pipeline_config
     )
 
     # --------------------------------------------------
@@ -109,8 +112,8 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
 
     logging.info("Starting 1st pruning round")
 
-    run_pruning(meta_csv, meta_report, meta_clean)
-    run_pruning(cits_csv, cits_report, cits_clean)
+    run_pruning(meta_csv, meta_report, meta_clean, pipeline_config)
+    run_pruning(cits_csv, cits_report, cits_clean, pipeline_config)
 
     # --------------------------------------------------
     # Second validation
@@ -120,7 +123,8 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
         meta_clean,
         cits_clean,
         base_out_dir,
-        "second_round"
+        "second_round",
+        pipeline_config
     )
 
     # --------------------------------------------------
@@ -129,10 +133,10 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
 
     logging.info("Starting 2nd pruning round (removing potentially new errors)")
 
-    run_pruning(meta_clean, meta_report, meta_clean, verbose=True)
-    run_pruning(cits_clean, cits_report, cits_clean, verbose=True)
+    run_pruning(meta_clean, meta_report, meta_clean, pipeline_config, verbose=True)
+    run_pruning(cits_clean, cits_report, cits_clean, pipeline_config, verbose=True)
 
-    # -------------------------------------------------- 
+    # --------------------------------------------------
     # Third validation
     # --------------------------------------------------
 
@@ -140,7 +144,8 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
         meta_clean,
         cits_clean,
         base_out_dir,
-        "third_round"
+        "third_round",
+        pipeline_config
     )
 
     # --------------------------------------------------
@@ -148,9 +153,9 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
     # --------------------------------------------------
 
     # 3rd pruning is necessary if the previous step has removed citation rows (linked each to 2 metadata rows)
-    logging.info("Starting 3rd pruning round (final cleanup)")  
-    run_pruning(meta_clean, meta_report, meta_clean, verbose=True)
-    run_pruning(cits_clean, cits_report, cits_clean, verbose=True)
+    logging.info("Starting 3rd pruning round (final cleanup)")
+    run_pruning(meta_clean, meta_report, meta_clean, pipeline_config, verbose=True)
+    run_pruning(cits_clean, cits_report, cits_clean, pipeline_config, verbose=True)
 
     # --------------------------------------------------
     # Final validation
@@ -165,8 +170,12 @@ def run_pruning_pipeline(original_fp_meta, original_fp_cits, base_out_dir):
             meta_out_dir=str(base_out_dir / "validation_reports" / "final_round" / "metadata"),
             cits_in=cits_clean,
             cits_out_dir=str(base_out_dir / "validation_reports" / "final_round" / "citations"),
-            meta_kwargs={'verify_id_existence': False},
-            cits_kwargs={'verify_id_existence': False}
+            strict_sequentiality=pipeline_config.strict_sequentiality,
+            use_lmdb=pipeline_config.use_lmdb,
+            map_size=pipeline_config.map_size,
+            cache_dir=pipeline_config.cache_dir,
+            meta_kwargs=pipeline_config.meta_kwargs,
+            cits_kwargs=pipeline_config.cits_kwargs,
         )
 
         meta_result, cits_result = final_cv.validate()

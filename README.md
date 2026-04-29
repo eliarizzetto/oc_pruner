@@ -9,6 +9,7 @@ A tool for removing rows from an OpenCitations metadata or citations table based
 - **Row-level deletion**: Removes entire rows containing issues
 - **Verbose output**: Detailed information about processing when needed
 - **Complete pipeline**: Run validation + pruning pipeline with multiple rounds for thorough cleaning
+- **Configurable pipeline**: Customise validation and pruning options when running the pipeline via CLI flags or config files
 
 
 ## Quick Start
@@ -28,7 +29,17 @@ This will:
 4. Repeat the process to catch any newly exposed issues
 5. Perform a final validation check
 
-**Running the pipeline from the CLI does not allow for any configuration. For more flexibility, see the following sections illustrating how to prune a single CSV table (either metadata or citations) given its pre-existing validation report.**
+You can customise the pipeline behaviour (which errors to ignore, whether to verify ID existence, etc.) via CLI flags or a configuration file:
+
+```bash
+# Using CLI flags
+oc_pruner pipeline -m metadata.csv -c citations.csv -o output_dir --ignore-labels br_id_syntax --verify-id-existence
+
+# Using a config file
+oc_pruner pipeline -m metadata.csv -c citations.csv -o output_dir --config pipeline_config.yaml
+```
+
+See the [Configuration](#configuration) section for details on the available options.
 
 ### Prune a Single Table Based On Its Existing Validation Report
 
@@ -56,11 +67,18 @@ oc_pruner prune --csv input.csv --report report.json --output output.csv --verbo
 
 ### CLI Arguments for `pipeline` mode (`pipeline` subcommand)
 
-| Argument          | Abbreviation | Required | Description                               |
-|-------------------|--------------|----------|-------------------------------------------|
-| `--meta PATH`      | `-m`         | Yes      | Path to the input metadata CSV file                |
-| `--cits PATH`   | `-c`         | Yes      | Path to the input citations CSV file   |
-| `--output PATH`   | `-o`         | Yes      | Path to the output directory where to write the output (pruned) file     |
+| Argument                  | Abbreviation | Required | Description                                                        |
+|---------------------------|--------------|----------|--------------------------------------------------------------------|
+| `--meta PATH`             | `-m`         | Yes      | Path to the input metadata CSV file                                |
+| `--cits PATH`             | `-c`         | Yes      | Path to the input citations CSV file                               |
+| `--out-dir PATH`          | `-o`         | Yes      | Path to the output directory where to write the output (pruned) files |
+| `--config PATH`           | —            | No       | Path to a YAML/JSON configuration file for pipeline options        |
+| `--error-type`            | `-e`         | No       | Filter issues by error type: `all` or `error`                     |
+| `--ignore-labels LABELS`  | `-i`         | No       | Comma-separated list of error labels to ignore                     |
+| `--verify-id-existence`   | —            | No       | Verify that bibliographic IDs exist via API lookup                 |
+| `--use-meta-endpoint`     | —            | No       | Use the OC Meta endpoint for ID existence checks                   |
+| `--strict-sequentiality`  | —            | No       | Skip closure check when individual validations report errors       |
+| `--help`                  | `-h`         | No       | Show help message                                                  |
 
 ### CLI Arguments for single document mode (`prune` subcommand)
 
@@ -97,6 +115,10 @@ Example `oc_pruner_config.yaml`:
 ```yaml
 # oc_pruner Configuration File
 
+# ============================================================
+# Pruning options (used by both 'prune' and 'pipeline')
+# ============================================================
+
 # Filter by error type: "all" (errors and warnings) or "error" (errors only)
 error_type_filter: "all"
 
@@ -104,6 +126,28 @@ error_type_filter: "all"
 ignore_error_labels:
   - "extra_space"
   - "br_id_format"
+
+# ============================================================
+# Validation options (used by 'pipeline')
+# ============================================================
+
+# Whether to verify that bibliographic IDs exist via API lookup
+verify_id_existence: false
+
+# Whether to use the OC Meta endpoint for ID existence checks
+use_meta_endpoint: false
+
+# Whether to skip closure check when individual validations report errors
+strict_sequentiality: false
+
+# Whether to use LMDB for caching (recommended for large files)
+use_lmdb: false
+
+# Maximum size in bytes for LMDB environments (default: 1 GB)
+# map_size: 1073741824
+
+# Base directory for LMDB caches
+# cache_dir: null
 ```
 
 ### Configuration Priority
@@ -131,6 +175,12 @@ oc_pruner pipeline -m metadata.csv -c citations.csv -o output_dir
 | `--meta PATH`  | `-m`         | Yes      | Path to original metadata CSV        |
 | `--cits PATH`  | `-c`         | Yes      | Path to original citations CSV       |
 | `--out-dir`    | `-o`         | Yes      | Base output directory for results    |
+| `--config PATH` | —           | No       | Path to a YAML/JSON config file for pipeline options |
+| `--error-type` | `-e`         | No       | Filter issues by error type: `all` or `error` |
+| `--ignore-labels` | `-i`      | No       | Comma-separated error labels to ignore |
+| `--verify-id-existence` | — | No       | Verify bibliographic IDs via API lookup |
+| `--use-meta-endpoint` | —   | No       | Use OC Meta endpoint for ID checks   |
+| `--strict-sequentiality` | — | No      | Skip closure check on validation errors |
 
 **What the pipeline does:**
 
@@ -138,9 +188,19 @@ oc_pruner pipeline -m metadata.csv -c citations.csv -o output_dir
 2. **First pruning**: Removes rows with validation errors
 3. **Second validation**: Re-validates the cleaned files to catch new issues
 4. **Second pruning**: Removes any newly exposed errors
-5. **Final validation**: Performs a sanity check on the final cleaned files
+5. **Third validation**: Re-validates again (removing citations may expose further metadata issues)
+6. **Third pruning**: Final cleanup of any remaining errors
+7. **Final validation**: Performs a sanity check on the final cleaned files
 
-**Running `oc_pruner` __in pipeline mode from the CLI__ does not allow to configure which error types or labels to ignore.**
+You can customise the pipeline via CLI flags or a config file. CLI flags override the config file:
+
+```bash
+# Using CLI flags
+oc_pruner pipeline -m metadata.csv -c citations.csv -o output_dir --ignore-labels br_id_syntax --verify-id-existence
+
+# Using a config file
+oc_pruner pipeline -m metadata.csv -c citations.csv -o output_dir --config pipeline_config.yaml
+```
 
 The pipeline creates the following structure in the output directory:
 
@@ -154,6 +214,9 @@ output_dir/
     │   ├── metadata/
     │   └── citations/
     ├── second_round/
+    │   ├── metadata/
+    │   └── citations/
+    ├── third_round/
     │   ├── metadata/
     │   └── citations/
     └── final_round/
@@ -253,6 +316,8 @@ The supported issue labels are listed in the [validation report schema](schema.j
 
 You can also use oc_pruner as a Python library:
 
+### Prune a Single Document
+
 ```python
 from oc_pruner import prune
 from oc_pruner.config import PrunerConfig
@@ -270,5 +335,29 @@ prune(
     output_path="output.csv",
     config=config,
     verbose=True
+)
+```
+
+### Run the Pipeline
+
+```python
+from oc_pruner.pipeline import run_pruning_pipeline
+from oc_pruner.config import PipelineConfig
+
+# Create pipeline configuration
+config = PipelineConfig(
+    error_type_filter="all",
+    ignore_error_labels=["extra_space"],
+    verify_id_existence=False,
+    use_meta_endpoint=False,
+    strict_sequentiality=False,
+)
+
+# Run the pipeline
+run_pruning_pipeline(
+    original_fp_meta="metadata.csv",
+    original_fp_cits="citations.csv",
+    base_out_dir="output",
+    pipeline_config=config,
 )
 ```
