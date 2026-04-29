@@ -23,11 +23,12 @@ oc_pruner pipeline --meta metadata.csv --cits citations.csv --out-dir output_dir
 ```
 
 This will:
-1. Validate both files
-2. Remove invalid rows
-3. Re-validate the cleaned files
-4. Repeat the process to catch any newly exposed issues
-5. Perform a final validation check
+
+  1. Validate both files
+  2. Remove invalid rows
+  3. Re-validate the cleaned files
+  4. Repeat the process to catch any newly exposed issues
+  5. Perform a final validation check
 
 You can customise the pipeline behaviour (which errors to ignore, whether to verify ID existence, etc.) via CLI flags or a configuration file:
 
@@ -100,9 +101,9 @@ oc_pruner prune --csv input.csv --report report.json --output output.csv --verbo
 
 Create a configuration file for default settings. The tool looks for:
 
-1. Explicitly specified file (via `--config`)
-2. `oc_pruner_config.yaml` or `oc_pruner_config.json` in current directory
-3. `~/.oc_pruner_config.yaml` in home directory
+  1. Explicitly specified file (via `--config`)
+  2. `oc_pruner_config.yaml` or `oc_pruner_config.json` in current directory
+  3. `~/.oc_pruner_config.yaml` in home directory
 
 Generate a template:
 
@@ -124,8 +125,8 @@ error_type_filter: "all"
 
 # List of error labels to ignore (rows with these issues will be kept, unless interested by other issues)
 ignore_error_labels:
-  - "extra_space"
-  - "br_id_format"
+- "extra_space"
+- "br_id_format"
 
 # ============================================================
 # Validation options (used by 'pipeline')
@@ -154,9 +155,9 @@ use_lmdb: false
 
 Settings are applied in this order (later override earlier):
 
-1. **Default values** from the code
-2. **Configuration file** if found
-3. **CLI arguments** (highest priority)
+  1. **Default values** from the code
+  2. **Configuration file** if found
+  3. **CLI arguments** (highest priority)
 
 ## Usage Examples
 
@@ -184,13 +185,13 @@ oc_pruner pipeline -m metadata.csv -c citations.csv -o output_dir
 
 **What the pipeline does:**
 
-1. **First validation**: Validates both metadata and citations files
-2. **First pruning**: Removes rows with validation errors
-3. **Second validation**: Re-validates the cleaned files to catch new issues
-4. **Second pruning**: Removes any newly exposed errors
-5. **Third validation**: Re-validates again (removing citations may expose further metadata issues)
-6. **Third pruning**: Final cleanup of any remaining errors
-7. **Final validation**: Performs a sanity check on the final cleaned files
+  1. **First validation**: Validates both metadata and citations files
+  2. **First pruning**: Removes rows with validation errors
+  3. **Second validation**: Re-validates the cleaned files to catch new issues
+  4. **Second pruning**: Removes any newly exposed errors
+  5. **Third validation**: Re-validates again (removing citations may expose further metadata issues)
+  6. **Third pruning**: Final cleanup of any remaining errors
+  7. **Final validation**: Performs a sanity check on the final cleaned files
 
 You can customise the pipeline via CLI flags or a config file. CLI flags override the config file:
 
@@ -240,7 +241,7 @@ Keep rows that have specific issues:
 
 ```bash
 oc_pruner --csv data.csv --report report.json --output clean.csv \
-  --ignore-labels extra_space,br_id_format
+ --ignore-labels extra_space,br_id_format
 ```
 
 ### Use Configuration File (Single Document)
@@ -302,13 +303,13 @@ The supported issue labels are listed in the [validation report schema](schema.j
 
 ## How It Works
 
-1. **Load Files**: Reads the CSV file and validation report
-2. **Filter Issues**: Based on configuration, determines which issues to consider
-   - `--error-type error`: Only considers "error" type issues
-   - `--ignore-labels`: Ignores issues with specified labels
-3. **Extract Affected Rows**: For each relevant issue, extracts row numbers from the position data
-4. **Remove Rows**: Removes entire rows that contain any non-ignored issue
-5. **Write Output**: Saves the cleaned CSV file
+  1. **Load Files**: Reads the CSV file and validation report
+  2. **Filter Issues**: Based on configuration, determines which issues to consider
+     - `--error-type error`: Only considers "error" type issues
+     - `--ignore-labels`: Ignores issues with specified labels
+  3. **Extract Affected Rows**: For each relevant issue, extracts row numbers from the position data
+  4. **Remove Rows**: Removes entire rows that contain any non-ignored issue
+  5. **Write Output**: Saves the cleaned CSV file
 
 **Important**: If a row has both an ignorable issue and a non-ignorable issue, the entire row is removed (the non-ignorable issue takes precedence).
 
