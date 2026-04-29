@@ -11,6 +11,24 @@ A tool for removing rows from an OpenCitations metadata or citations table based
 - **Complete pipeline**: Run validation + pruning pipeline with multiple rounds for thorough cleaning
 - **Configurable pipeline**: Customise validation and pruning options when running the pipeline via CLI flags or config files
 
+## Installation
+The library can be installed from **PyPI**:
+```
+pip install oc_pruner
+```
+
+## Contributing / Development
+
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management and building. To set up a development environment:
+
+```bash
+# Clone the repository
+git clone https://github.com/opencitations/oc_pruner.git
+cd oc_pruner
+
+# Create a virtual environment and install dependencies
+uv sync
+```
 
 ## Quick Start
 
